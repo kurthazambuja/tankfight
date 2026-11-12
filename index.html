@@ -38,7 +38,7 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.06e
 .btn:hover{border-color:var(--muted)}
 .btn.primary{background:var(--accent);color:#1b1a10;border-color:var(--accent);font-weight:700}
 .btn:disabled{opacity:.4;cursor:default}
-:is(.btn,.seg button,.step button,.tag,.mv,.gamebtn,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:is(.btn,.seg button,.step button,.tag,.mv,.gamebtn,.tp,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .hud{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
 .pcard{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);padding:7px 11px;border-radius:4px;min-width:0}
@@ -67,11 +67,18 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.06e
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:500}
 .join{border:1px dashed var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px}
-.code{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.16em;line-height:1;color:var(--accent);overflow-wrap:anywhere}
+.code{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:.08em;line-height:1;color:var(--accent);white-space:nowrap}
 .status{font-size:11.5px;color:var(--muted)}
 .status.ok::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#5fd38a;margin-right:6px;vertical-align:1px}
 .status.bad{color:var(--warn)}
 .note{color:var(--muted);font-size:11.5px;margin:0}
+.teampick{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.tp{display:flex;align-items:center;gap:10px;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:10px 12px;text-align:left;min-width:0}
+.tp .dot{width:16px;height:16px;border-radius:4px;background:var(--s);flex:none}
+.tp b{font-family:var(--display);font-size:15px;letter-spacing:.04em;display:block}
+.tp small{display:block;color:var(--muted);font-size:11px}
+.tp[aria-pressed="true"]{border-color:var(--s);background:var(--panel-2)}
+.tp:disabled{opacity:.35;cursor:default}
 .qrrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .qr{width:132px;height:132px;max-width:100%;aspect-ratio:1;border-radius:6px;background:#fff;image-rendering:pixelated;border:0;flex:none}
 .qrrow .meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
@@ -167,11 +174,25 @@ a{color:var(--accent)}
     <section class="card" id="setup" aria-label="Match setup">
       <h2>Match setup</h2>
       <div class="field">
+        <span class="label">Mode</span>
+        <div class="seg" id="modeSeg">
+          <button id="mdBattle" data-mode="battle">Battle</button>
+          <button id="mdMission" data-mode="mission">Mission</button>
+        </div>
+        <p class="note" id="modeNote"></p>
+      </div>
+      <div class="field">
         <div class="row"><span class="label">Teams</span>
           <div class="step"><button id="tMinus" aria-label="Fewer teams">−</button><output id="tVal">4</output><button id="tPlus" aria-label="More teams">+</button></div>
         </div>
-        <div class="row"><span class="label">Lives per tank</span>
+        <div class="row" id="livesRow"><span class="label">Lives per tank</span>
           <div class="step"><button id="lMinus" aria-label="Fewer lives">−</button><output id="lVal">3</output><button id="lPlus" aria-label="More lives">+</button></div>
+        </div>
+        <div class="row"><span class="label">Reload time</span>
+          <div class="step"><button id="rMinus" aria-label="Faster reload">−</button><output id="rVal" style="min-width:64px">0.5 s</output><button id="rPlus" aria-label="Slower reload">+</button></div>
+        </div>
+        <div class="row" id="targetsRow" hidden><span class="label">Targets per team</span>
+          <div class="step"><button id="gMinus" aria-label="Fewer targets">−</button><output id="gVal">3</output><button id="gPlus" aria-label="More targets">+</button></div>
         </div>
       </div>
       <div class="field">
@@ -234,7 +255,9 @@ a{color:var(--accent)}
   </section>
 
   <footer class="legend">
-    <div><b>Phones</b> Each crew member only gets the buttons they were dealt. Up to 6 phones per tank.</div>
+    <div><b>Battle</b> Last tank standing wins.</div>
+    <div><b>Mission</b> Each team has targets in its own colour. The first team to destroy all of its targets wins. Tanks can't destroy each other, but tanks and other teams' targets block your shells.</div>
+    <div><b>Phones</b> Players scan the QR code, pick a team and only get the buttons they were dealt. Up to 6 phones per tank.</div>
     <div><b>Keyboard, team 1</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive · <kbd>Q</kbd><kbd>E</kbd> cannon · <kbd>Space</kbd> fire</div>
     <div><b>Keyboard, team 2</b> Arrows drive · <kbd>,</kbd><kbd>.</kbd> cannon · <kbd>/</kbd> fire</div>
     <div>Shells stop at the first tree, rock or wall. In the forest, shells fly over the pond but tanks can't cross it. <kbd>Esc</kbd> pauses.</div>
@@ -255,6 +278,10 @@ a{color:var(--accent)}
     <div class="field">
       <label class="label" for="nickIn">Your name</label>
       <input id="nickIn" maxlength="14" autocomplete="nickname" placeholder="e.g. Ana">
+    </div>
+    <div class="field">
+      <span class="label">Your team</span>
+      <div class="teampick" id="teamPick"><span class="note">Teams appear once you’re connected to the game.</span></div>
     </div>
     <button class="btn primary" id="joinBtn">Join game</button>
     <span class="status" id="padRoomStatus">Scan the QR code on the arena screen, or type its code.</span>
@@ -313,13 +340,15 @@ const GAME_KEYS = new Set(KEYMAP.flatMap(m => Object.values(m).flat()));
 const SPAWNS = [[80,80],[W-80,H-80],[W-80,80],[80,H-80],[W/2,64],[W/2,H-64]];
 const MAX_CREW = 6;
 
-const cfg = {teams:4, lives:3, theme:'forest', ctl:['phones','phones','cpu','cpu','cpu','cpu']};
+const RELOADS = [0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3];
+const cfg = {mode:'battle', targets:3, teams:4, lives:3, reload:0.5, theme:'forest', ctl:['phones','phones','cpu','cpu','cpu','cpu']};
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp = (v,a,b) => v<a?a:v>b?b:v;
 const wrapA = a => { while(a>Math.PI)a-=Math.PI*2; while(a<-Math.PI)a+=Math.PI*2; return a; };
 function mulberry(s){ return () => { s|=0; s=s+0x6D2B79F5|0; let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+{ const r = parseFloat(store.get('tank-reload')); if (RELOADS.includes(r)) cfg.reload = r; }
 
 // ---------- host game code ----------
 let hostCode = store.get('tank-code');
@@ -394,6 +423,7 @@ function buildArena(){
     }
   }
   paintGround(); paintObstacles();
+  placeTargets();
 }
 function paintGround(){
   const forest = cfg.theme==='forest';
@@ -488,7 +518,38 @@ function paintObstacles(){
 
 // ---------- collisions ----------
 function hitObs(o,x,y,r){ return o.k==='c' ? (x-o.x)**2+(y-o.y)**2 < (o.r+r)**2 : rectDist(x,y,o) < r; }
-function tankBlocked(x,y){ if (x<TR||y<TR||x>W-TR||y>H-TR) return true; for (const o of obs) if (hitObs(o,x,y,TR)) return true; return false; }
+function tankBlocked(x,y){
+  if (x<TR||y<TR||x>W-TR||y>H-TR) return true;
+  for (const o of obs) if (hitObs(o,x,y,TR)) return true;
+  for (const g of S.targets) if (g.alive && (x-g.x)**2+(y-g.y)**2 < (g.r+TR-2)**2) return true;
+  return false;
+}
+function placeTargets(){
+  S.targets = [];
+  if (cfg.mode!=='mission') return;
+  const R = 14;
+  const passes = [[70,150,330],[52,115,220],[40,85,0]];
+  for (const [gap, spawnGap, ownGap] of passes){
+    const list = [];
+    let ok = true;
+    for (let k=0; k<cfg.targets && ok; k++) for (let i=0; i<cfg.teams && ok; i++){
+      let placed = false;
+      for (let tries=0; tries<500; tries++){
+        const x = 56+Math.random()*(W-112), y = 56+Math.random()*(H-112);
+        if (obs.some(o => hitObs(o,x,y,R+24))) continue;
+        if (SPAWNS.slice(0,cfg.teams).some(([sx,sy]) => Math.hypot(x-sx,y-sy) < spawnGap)) continue;
+        if (Math.hypot(x-SPAWNS[i][0], y-SPAWNS[i][1]) < ownGap) continue;
+        if (list.some(g => Math.hypot(x-g.x,y-g.y) < gap)) continue;
+        list.push({x, y, r:R, team:i, alive:true, ph:Math.random()*6});
+        placed = true; break;
+      }
+      if (!placed) ok = false;
+    }
+    S.targets = list;
+    if (ok) return;
+  }
+}
+const targetsLeft = i => S.targets.filter(g => g.team===i && g.alive).length;
 function shellHit(x,y){ if (x<0||y<0||x>W||y>H) return {edge:true}; for (const o of obs) if (o.shell && hitObs(o,x,y,2)) return o; return null; }
 function los(x1,y1,x2,y2){ const d=Math.hypot(x2-x1,y2-y1), n=Math.ceil(d/9); for (let i=1;i<n;i++){ const x=x1+(x2-x1)*i/n, y=y1+(y2-y1)*i/n; for (const o of obs) if (o.shell && hitObs(o,x,y,3)) return false; } return true; }
 
@@ -511,7 +572,7 @@ function boom(){
 }
 
 // ---------- state ----------
-const S = {phase:'setup', paused:false, tanks:[], bullets:[], parts:[], t:0, shake:0, winner:null};
+const S = {phase:'setup', paused:false, tanks:[], bullets:[], parts:[], targets:[], t:0, shake:0, winner:null, why:null};
 const keys = {};
 const pads = new Map();   // peer -> {nick, team, bits, h, want}
 let needPush = true, lastPush = 0, lobbyDirty = true;
@@ -528,7 +589,7 @@ function newMatch(){
   ensureAudio();
   buildArena();
   S.tanks = Array.from({length:cfg.teams}, (_,i)=>makeTank(i,false));
-  S.bullets=[]; S.parts=[]; S.phase='countdown'; S.t=2.4; S.paused=false; S.winner=null; $('pauseMenu').hidden = true;
+  S.bullets=[]; S.parts=[]; S.phase='countdown'; S.t=2.4; S.paused=false; S.winner=null; S.why=null; $('pauseMenu').hidden = true;
   $('result').hidden = true; $('setup').hidden = true; $('lobbyWrap').hidden = true;
   $('layout').classList.add('playing');
   $('pauseBtn').hidden = false; $('pauseBtn').textContent = 'Pause'; $('setupBtn').hidden = false;
@@ -569,9 +630,19 @@ function teamBits(t, dt){
 function cpuBits(t, dt){
   const A = t.ai;
   const foes = S.tanks.filter(o => o!==t && o.alive);
-  if (!foes.length) return 0;
-  let tg=foes[0], best=1e9;
+  let tg=null, best=1e9;
   for (const o of foes){ const d=Math.hypot(o.x-t.x,o.y-t.y)-(los(t.x,t.y,o.x,o.y)?140:0); if (d<best){best=d; tg=o;} }
+  let far=300, near=150;
+  if (cfg.mode==='mission'){
+    const mine = S.targets.filter(g => g.alive && g.team===t.id);
+    tg = null;
+    if (mine.length){
+      let gb=null, gd=1e9;
+      for (const g of mine){ const d=Math.hypot(g.x-t.x,g.y-t.y)-(los(t.x,t.y,g.x,g.y)?160:0); if (d<gd){gd=d; gb=g;} }
+      tg = gb; far = 200; near = 0;
+    }
+  }
+  if (!tg) return 0;
   A.check -= dt;
   if (A.check<=0){
     if (A.wantMove && Math.hypot(t.x-A.lx,t.y-A.ly)<8){ A.evade=.55+Math.random()*.45; A.evTurn=Math.random()<.5?4:8; }
@@ -586,8 +657,8 @@ function cpuBits(t, dt){
   if (A.evade>0){ A.evade-=dt; A.wantMove=false; b |= (A.evade>.3?2:1) | A.evTurn; return b; }
   const hd = wrapA(aim - t.a);
   if (see){
-    if (d>300){ b|=1; if (hd>.1) b|=8; else if (hd<-.1) b|=4; }
-    else if (d<150) b|=2;
+    if (d>far){ b|=1; if (hd>.1) b|=8; else if (hd<-.1) b|=4; }
+    else if (d<near) b|=2;
     if (Math.abs(td)<.1) b|=64;
   } else {
     if (hd>.08) b|=8; else if (hd<-.08) b|=4;
@@ -601,10 +672,10 @@ function cpuBits(t, dt){
 const SPEED=135, ROT=2.6, TROT=2.9, BSPEED=450;
 function fire(t){
   if (t.cd>0) return;
-  if (S.bullets.filter(b=>b.owner===t.id).length>=2) return;
+  if (S.bullets.filter(b=>b.owner===t.id).length>=3) return;
   const a = t.a+t.ta, bx=t.x+Math.cos(a)*27, by=t.y+Math.sin(a)*27;
   if (shellHit(bx,by)) return;
-  t.cd = cfg.ctl[t.id]==='cpu' ? .7 : .45;
+  t.cd = cfg.ctl[t.id]==='cpu' ? Math.max(cfg.reload*1.4, .25) : cfg.reload;
   S.bullets.push({x:bx, y:by, vx:Math.cos(a)*BSPEED, vy:Math.sin(a)*BSPEED, owner:t.id, life:1.8});
   for (let i=0;i<6;i++){ const s=a+(Math.random()-.5)*.8, v=80+Math.random()*90; S.parts.push({x:bx,y:by,vx:Math.cos(s)*v,vy:Math.sin(s)*v,life:.18,max:.18,c:'#ffd58a',s:3}); }
   tone(240,90,.09,'square',.045);
@@ -616,6 +687,7 @@ function trackMark(t){
   gctx.fillRect(-3,-17,6,6); gctx.fillRect(-3,11,6,6); gctx.restore();
 }
 function hitTank(t,b){
+  if (cfg.mode==='mission'){ spark(b.x,b.y,'#dfe9ff',7,100); tone(900,480,.06,'sine',.03); return; }
   if (t.shield>0){ spark(b.x,b.y,'#dfe9ff',6,90); tone(900,500,.06,'sine',.03); return; }
   t.lives--; t.alive=false; t.respawn=1.6;
   const k = S.tanks[b.owner]; if (k && k!==t) k.kills++;
@@ -625,6 +697,15 @@ function hitTank(t,b){
   S.shake=.35; boom();
   if (t.lives<=0) t.out=true;
   renderHud(); needPush = true;
+}
+function destroyTarget(g){
+  g.alive = false;
+  const T = TEAMS[g.team];
+  spark(g.x,g.y,T.c,24,200); spark(g.x,g.y,'#ffffff',10,140); spark(g.x,g.y,'#5a4a32',10,80);
+  gctx.fillStyle='rgba(10,8,4,.35)'; gctx.beginPath(); gctx.arc(g.x,g.y,18,0,Math.PI*2); gctx.fill();
+  tone(520,980,.12,'square',.05); setTimeout(()=>tone(980,1300,.1,'square',.04),90);
+  renderHud(); needPush = true;
+  if (S.phase==='play' && targetsLeft(g.team)===0){ S.phase='ending'; S.t=1.4; S.winner=S.tanks[g.team]; S.why='targets'; }
 }
 function update(dt){
   for (const p of S.parts){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=.92; p.vy*=.92; p.life-=dt; }
@@ -669,6 +750,14 @@ function update(dt){
         spark(b.x,b.y,c,9,110); tone(500,180,.05,'triangle',.025);
         break;
       }
+      let tgHit = null;
+      for (const g of S.targets) if (g.alive && Math.hypot(g.x-b.x,g.y-b.y) < g.r+3){ tgHit = g; break; }
+      if (tgHit){
+        b.dead = true;
+        if (tgHit.team===b.owner) destroyTarget(tgHit);
+        else { spark(b.x,b.y,'#efe9d6',7,100); tone(820,420,.05,'triangle',.03); }
+        break;
+      }
       for (const t of S.tanks){
         if (!t.alive || t.id===b.owner) continue;
         if (Math.hypot(t.x-b.x,t.y-b.y)<TR+3){ b.dead=true; hitTank(t,b); break; }
@@ -683,7 +772,7 @@ function update(dt){
 
   if (S.phase==='play'){
     const left = S.tanks.filter(t=>!t.out);
-    if (left.length<=1){ S.phase='ending'; S.t=1.4; S.winner=left[0]||null; }
+    if (left.length<=1){ S.phase='ending'; S.t=1.4; S.winner=left[0]||null; S.why='last'; }
   } else if ((S.t-=dt)<=0){ S.phase='over'; needPush=true; showResult(); }
 }
 
@@ -713,6 +802,25 @@ function drawTank(t){
   ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.strokeText(t.col.name.toUpperCase(), t.x, t.y-TR-9);
   ctx.fillStyle=t.col.c; ctx.fillText(t.col.name.toUpperCase(), t.x, t.y-TR-9); ctx.textAlign='start';
 }
+function drawTargets(){
+  const now = performance.now()/1000;
+  for (const g of S.targets){
+    const T = TEAMS[g.team];
+    if (!g.alive){
+      ctx.strokeStyle = T.d; ctx.lineWidth = 3; ctx.globalAlpha = .7;
+      ctx.beginPath(); ctx.moveTo(g.x-7,g.y-7); ctx.lineTo(g.x+7,g.y+7); ctx.moveTo(g.x+7,g.y-7); ctx.lineTo(g.x-7,g.y+7); ctx.stroke();
+      ctx.globalAlpha = 1; continue;
+    }
+    ctx.fillStyle='rgba(0,0,0,.32)'; ctx.beginPath(); ctx.arc(g.x+4,g.y+5,g.r+2,0,Math.PI*2); ctx.fill();
+    const rings = [[g.r+2,'#1b1a14'],[g.r,T.c],[g.r*.72,'#f5f2e6'],[g.r*.46,T.c],[g.r*.2,'#f5f2e6']];
+    for (const [r,c] of rings){ ctx.fillStyle=c; ctx.beginPath(); ctx.arc(g.x,g.y,r,0,Math.PI*2); ctx.fill(); }
+    if (S.phase!=='setup'){
+      const pr = g.r + 5 + 3*Math.sin(now*3+g.ph);
+      ctx.strokeStyle = T.c; ctx.globalAlpha = .45; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(g.x,g.y,pr,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  }
+}
 function centerText(big, small){
   ctx.fillStyle='rgba(12,14,10,.5)'; ctx.fillRect(0,H/2-62,W,124);
   ctx.textAlign='center'; ctx.fillStyle='#ecead9';
@@ -731,6 +839,7 @@ function draw(){
       ctx.beginPath(); ctx.arc(x,y,TR+4,0,Math.PI*2*(1-t.respawn/1.6)); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
     }
   }
+  drawTargets();
   for (const t of S.tanks) if (t.alive) drawTank(t);
   for (const b of S.bullets){
     ctx.strokeStyle=S.tanks[b.owner].col.c; ctx.globalAlpha=.5; ctx.lineWidth=3;
@@ -740,12 +849,12 @@ function draw(){
   for (const p of S.parts){ ctx.globalAlpha=Math.max(0,p.life/p.max); ctx.fillStyle=p.c; ctx.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s); }
   ctx.globalAlpha=1;
   if (S.phase==='setup'){
-    const msg = `${cfg.theme==='forest'?'Forest':'Desert'} · ${cfg.teams} teams · ${cfg.lives} ${cfg.lives===1?'life':'lives'} each`;
+    const msg = `${cfg.mode==='mission'?`Mission · ${cfg.targets} target${cfg.targets===1?'':'s'} each`:'Battle'} · ${cfg.theme==='forest'?'Forest':'Desert'} · ${cfg.teams} teams · ${cfg.lives} ${cfg.lives===1?'life':'lives'} each · ${cfg.reload} s reload`;
     ctx.font='500 12px "IBM Plex Mono", monospace'; const w=ctx.measureText(msg).width+28;
     ctx.fillStyle='rgba(12,14,10,.6)'; ctx.fillRect(W/2-w/2,H-48,w,30);
     ctx.textAlign='center'; ctx.fillStyle='#ecead9'; ctx.fillText(msg,W/2,H-28); ctx.textAlign='start';
   }
-  if (S.phase==='countdown') centerText(S.t>.4 ? String(Math.ceil(S.t-.4)) : 'GO', 'Last tank standing wins');
+  if (S.phase==='countdown') centerText(S.t>.4 ? String(Math.ceil(S.t-.4)) : 'GO', cfg.mode==='mission' ? 'Destroy every target in your colour' : 'Last tank standing wins');
 }
 
 // ---------- crews (host side) ----------
@@ -810,9 +919,11 @@ function onPadData(id, d){
   if (!p) return;
   if (d.t==='h') p.h = (d.h|0) & 127;
   else if (d.t==='want') applyWant(id, p, d.want);
+  else if (d.t==='bye') removePad(id);
 }
-function dropPad(id){
-  conns.delete(id);
+function dropPad(id){ conns.delete(id); removePad(id); }
+function removePad(id){
+  needPush = true;
   const p = pads.get(id); if (!p) return;
   pads.delete(id); deal(p.team); lobbyDirty = true; updateRoomUI(); if (S.phase!=='setup') renderHud();
 }
@@ -821,9 +932,12 @@ function pushHost(){
   const phase = S.phase==='ending'||S.phase==='countdown' ? 'play' : S.phase;
   const lives = Array.from({length:cfg.teams},(_,i)=> S.phase==='setup' ? cfg.lives : (S.tanks[i] ? S.tanks[i].lives : cfg.lives));
   const ctl = cfg.ctl.slice(0,cfg.teams).map(c=>c[0]);
+  const crewN = Array.from({length:cfg.teams},(_,i)=>crew(i).length);
+  const tl = Array.from({length:cfg.teams},(_,i)=>targetsLeft(i));
   for (const [id,conn] of conns){
-    const p = pads.get(id); if (!p || !conn.open) continue;
-    try { conn.send({t:'state', code:hostCode, team:p.team, bits:p.bits, phase, lives, ctl}); } catch(_){}
+    if (!conn.open) continue;
+    const p = pads.get(id);
+    try { conn.send({t:'state', code:hostCode, joined:!!p, team:p?p.team:-1, bits:p?p.bits:0, phase, lives, ctl, crew:crewN, mode:cfg.mode, tl, tt:cfg.targets}); } catch(_){}
   }
 }
 
@@ -833,19 +947,28 @@ function renderHud(){
     const c = cfg.ctl[t.id];
     const n = crew(t.id).length;
     const who = c==='cpu' ? 'CPU' : c==='keyboard' ? 'Keyboard' : `${n} phone${n===1?'':'s'}`;
-    const pips = Array.from({length:cfg.lives},(_,i)=>`<span class="pip${i<t.lives?'':' lost'}"></span>`).join('');
+    const pips = cfg.mode==='mission' ? '' : Array.from({length:cfg.lives},(_,i)=>`<span class="pip${i<t.lives?'':' lost'}"></span>`).join('');
     return `<div class="pcard${t.out?' out':''}" style="--c:${t.col.c}">
       <b>${t.col.name}</b><div class="pips" aria-label="${t.lives} lives left">${pips}</div>
-      <small>${who}</small><span class="kills">${t.out?'Out':t.kills+(t.kills===1?' kill':' kills')}</span></div>`;
+      <small>${who}</small><span class="kills">${t.out?'Out':cfg.mode==='mission'?`${targetsLeft(t.id)} of ${cfg.targets} targets left`:t.kills+(t.kills===1?' kill':' kills')}</span></div>`;
   }).join('');
 }
 function renderSetup(){
   $('tVal').textContent=cfg.teams; $('lVal').textContent=cfg.lives;
   $('tMinus').disabled=cfg.teams<=2; $('tPlus').disabled=cfg.teams>=6;
   $('lMinus').disabled=cfg.lives<=1; $('lPlus').disabled=cfg.lives>=9;
+  $('rVal').textContent = cfg.reload + ' s';
+  $('rMinus').disabled = cfg.reload<=RELOADS[0]; $('rPlus').disabled = cfg.reload>=RELOADS[RELOADS.length-1];
   $('thForest').setAttribute('aria-pressed', String(cfg.theme==='forest'));
   $('thDesert').setAttribute('aria-pressed', String(cfg.theme==='desert'));
   $('codeOut').textContent = hostCode;
+  $('mdBattle').setAttribute('aria-pressed', String(cfg.mode==='battle'));
+  $('mdMission').setAttribute('aria-pressed', String(cfg.mode==='mission'));
+  $('modeNote').textContent = cfg.mode==='mission' ? 'Each team shoots the targets in its own colour. Tanks can’t destroy each other here, but they can block shots. First team to clear all its targets wins.' : 'Tanks fight until only one is left.';
+  $('targetsRow').hidden = cfg.mode!=='mission';
+  $('livesRow').hidden = cfg.mode==='mission';
+  $('gVal').textContent = cfg.targets;
+  $('gMinus').disabled = cfg.targets<=1; $('gPlus').disabled = cfg.targets>=8;
 }
 function renderLobby(){
   lobbyDirty = false;
@@ -890,6 +1013,12 @@ $('tMinus').onclick = () => { cfg.teams=Math.max(2,cfg.teams-1); configChanged()
 $('tPlus').onclick  = () => { cfg.teams=Math.min(6,cfg.teams+1); configChanged(); };
 $('lMinus').onclick = () => { cfg.lives=Math.max(1,cfg.lives-1); configChanged(); };
 $('lPlus').onclick  = () => { cfg.lives=Math.min(9,cfg.lives+1); configChanged(); };
+function stepReload(d){ const i = clamp(RELOADS.indexOf(cfg.reload)+d, 0, RELOADS.length-1); cfg.reload = RELOADS[i]; store.set('tank-reload', String(cfg.reload)); renderSetup(); }
+$('rMinus').onclick = () => stepReload(-1);
+$('rPlus').onclick  = () => stepReload(1);
+$('modeSeg').onclick = e => { const b=e.target.closest('[data-mode]'); if (!b) return; cfg.mode=b.dataset.mode; configChanged(); };
+$('gMinus').onclick = () => { cfg.targets=Math.max(1,cfg.targets-1); configChanged(); };
+$('gPlus').onclick  = () => { cfg.targets=Math.min(8,cfg.targets+1); configChanged(); };
 $('themeSeg').onclick = e => { const b=e.target.closest('[data-theme]'); if (!b) return; cfg.theme=b.dataset.theme; configChanged(); };
 $('lobby').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -910,7 +1039,7 @@ function showResult(){
   const w = S.winner;
   $('resultBox').style.setProperty('--c', w ? w.col.c : '#ecead9');
   $('resultTitle').textContent = w ? `${w.col.name} wins` : 'Draw';
-  $('resultSub').textContent = w ? `${w.kills} ${w.kills===1?'kill':'kills'} · ${w.lives} ${w.lives===1?'life':'lives'} left` : 'The last tanks went down together.';
+  $('resultSub').textContent = !w ? 'The last tanks went down together.' : S.why==='targets' ? `First to destroy all ${cfg.targets} target${cfg.targets===1?'':'s'}` : `Last tank standing · ${w.kills} ${w.kills===1?'kill':'kills'} · ${w.lives} ${w.lives===1?'life':'lives'} left`;
   $('result').hidden = false; $('pauseBtn').hidden = true;
   tone(523,523,.15,'square',.05); setTimeout(()=>tone(784,784,.25,'square',.05),160);
 }
@@ -931,9 +1060,9 @@ function padConnect(){
   const go = () => {
     const c = padPeer.connect(peerId(P.code), {reliable:true});
     hostConn = c;
-    c.on('open', () => { if (hostConn!==c) return; padNet='on'; c.send({t:'hello', nick:P.nick, want:P.want}); renderPad(); });
+    c.on('open', () => { if (hostConn!==c) return; padNet='on'; if (P.joined) c.send({t:'hello', nick:P.nick, want:P.want}); renderPad(); });
     c.on('data', d => { if (hostConn!==c) return; if (d && d.t==='state'){ hostState=d; renderPad(); } });
-    c.on('close', () => { if (hostConn!==c) return; if (P.joined){ padNet='lost'; hostState=null; P.key=''; renderPad(); } });
+    c.on('close', () => { if (hostConn!==c) return; hostConn=null; hostState=null; P.key=''; padNet = P.joined ? 'lost' : 'idle'; renderPad(); });
   };
   if (padPeer.open) go(); else padPeer.once('open', go);
 }
@@ -952,22 +1081,53 @@ for (const b of padBtns){
 $('padCtl').addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('visibilitychange', () => { if (document.hidden && P.held){ P.held=0; padSend({t:'h', h:0}); padBtns.forEach(b=>b.classList.remove('on')); } });
 
-function renderPadJoin(){}
-$('codeIn').addEventListener('input', () => { $('codeIn').value=$('codeIn').value.toUpperCase().replace(/[^A-Z]/g,''); });
+let pickKey = '';
+function renderPadJoin(){
+  const st = $('padRoomStatus'), code = $('codeIn').value;
+  const hp = padNet==='on' && P.code===code ? hostState : null;
+  if (!/^[A-Z]{4}$/.test(code)){ st.className='status'; st.textContent='Scan the QR code on the arena screen, or type its code.'; }
+  else if (padNet==='off'){ st.className='status bad'; st.textContent='Can’t reach the connection service. Check your internet, then edit the code to retry.'; }
+  else if (padNet==='nogame'){ st.className='status bad'; st.textContent=`No game with code ${code} right now. Check the code on the arena screen.`; }
+  else if (!hp){ st.className='status'; st.textContent=`Connecting to game ${code}…`; }
+  else { st.className='status ok'; st.textContent=`Connected to game ${code}. Pick a team and join.`; }
+  const ctl = hp && Array.isArray(hp.ctl) ? hp.ctl : [], crewN = hp && Array.isArray(hp.crew) ? hp.crew : [];
+  const choices = ctl.map((c,i)=>c==='p'?i:-1).filter(i=>i>=0);
+  if (P.want>=0 && hp && !choices.includes(P.want)) P.want = -1;
+  const key = hp ? choices.map(i=>i+':'+(crewN[i]|0)).join(',')+'|'+P.want : 'none';
+  if (key===pickKey) return;
+  pickKey = key;
+  const wrap = $('teamPick');
+  if (!hp){ wrap.innerHTML = '<span class="note">Teams appear once you’re connected to the game.</span>'; return; }
+  if (!choices.length){ wrap.innerHTML = '<span class="note">No teams are open to phones yet. Join anyway and the host can add you.</span>'; return; }
+  wrap.innerHTML = choices.map(i => {
+    const n = crewN[i]|0, full = n>=MAX_CREW;
+    return `<button class="tp" data-team="${i}" style="--s:${TEAMS[i].c}" aria-pressed="${P.want===i}" ${full?'disabled':''}><span class="dot"></span><span><b>${TEAMS[i].name}</b><small>${full?'Full':`${n} of ${MAX_CREW} players`}</small></span></button>`;
+  }).join('') + `<button class="tp" data-team="-1" style="--s:#a4a790" aria-pressed="${P.want<0}"><span class="dot"></span><span><b>Any team</b><small>Fill the emptiest</small></span></button>`;
+}
+$('teamPick').onclick = e => { const b=e.target.closest('[data-team]'); if (!b || b.disabled) return; P.want=+b.dataset.team; pickKey=''; renderPadJoin(); };
+function previewConnect(){
+  const code = $('codeIn').value;
+  if (!/^[A-Z]{4}$/.test(code) || P.joined) { renderPadJoin(); return; }
+  if (P.code===code && hostConn && (padNet==='on' || padNet==='connecting')) { renderPadJoin(); return; }
+  P.code = code; pickKey=''; padConnect();
+}
+$('codeIn').addEventListener('input', () => { $('codeIn').value=$('codeIn').value.toUpperCase().replace(/[^A-Z]/g,''); previewConnect(); });
 $('nickIn').value = P.nick;
 $('joinBtn').onclick = () => {
   const code = $('codeIn').value.toUpperCase().trim(), nick = $('nickIn').value.trim().slice(0,14) || 'Player';
   if (!/^[A-Z]{4}$/.test(code)){ $('codeIn').focus(); $('padRoomStatus').className='status bad'; $('padRoomStatus').textContent='Enter the 4-letter code shown on the arena screen.'; return; }
+  const sameConn = P.code===code && hostConn && hostConn.open;
   P.joined=true; P.code=code; P.nick=nick; P.held=0; P.key=''; store.set('tank-nick', nick);
-  padConnect();
+  if (sameConn) padSend({t:'hello', nick, want:P.want}); else padConnect();
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(()=>{}); } catch(_){}
   $('padJoin').hidden=true; $('padPlay').hidden=false; renderPad();
 };
 $('leaveBtn').onclick = () => {
-  P.joined=false; P.held=0; hostState=null;
-  if (hostConn){ const c=hostConn; hostConn=null; try { c.close(); } catch(_){} }
+  padSend({t:'h', h:0}); padSend({t:'bye'});
+  P.joined=false; P.held=0; pickKey='';
   padBtns.forEach(b=>b.classList.remove('on'));
   $('padPlay').hidden=true; $('padJoin').hidden=false;
+  if (!(hostConn && hostConn.open)) previewConnect(); else renderPadJoin();
 };
 $('swatches').onclick = e => { const b=e.target.closest('[data-team]'); if (!b) return; P.want=+b.dataset.team; padSend({t:'want', want:P.want}); };
 function renderPad(){
@@ -980,7 +1140,7 @@ function renderPad(){
   $('padTeam').textContent = T ? `${T.name} team` : 'No team yet';
   $('padNick').textContent = `${P.nick} · game ${P.code}`;
   const lives = hp && Array.isArray(hp.lives) && team>=0 ? (hp.lives[team]|0) : 0;
-  $('padLives').innerHTML = team>=0 ? Array.from({length:Math.max(lives, ...(hp.lives||[0]))},(_,i)=>`<span class="pip${i<lives?'':' lost'}"></span>`).join('') : '';
+  $('padLives').innerHTML = team>=0 && hp.mode!=='mission' ? Array.from({length:Math.max(lives, ...(hp.lives||[0]))},(_,i)=>`<span class="pip${i<lives?'':' lost'}"></span>`).join('') : '';
   let st;
   if (padNet==='off') st = 'Can’t reach the connection service. Check your internet, then tap Lobby and Join again.';
   else if (padNet==='nogame') st = `No game with code ${P.code}. Check the code on the arena screen, then tap Lobby and Join again.`;
@@ -991,6 +1151,7 @@ function renderPad(){
   else if (hp.phase==='setup') st = 'In the lobby. The host starts the match from the arena screen.';
   else if (hp.phase==='over') st = 'Match over. Watch the arena screen for a rematch.';
   else if (lives<=0) st = 'Your tank is out.';
+  else if (hp.mode==='mission' && Array.isArray(hp.tl)) st = `Match on. Shoot your ${T.name} targets: ${hp.tl[team]|0} of ${hp.tt|0} left.`;
   else st = 'Match on. Hold a button to act.';
   $('padStatus').textContent = st;
   const key = team+':'+bits;
@@ -1031,7 +1192,7 @@ function setView(v){
     needPush = true; lobbyDirty = true;
   } else {
     renderPad();
-    if ($('codeIn').value && !P.joined) setTimeout(()=>{ try { $('nickIn').focus(); } catch(_){} }, 50);
+    if (!P.joined) previewConnect();
   }
 }
 addEventListener('hashchange', () => setView(decideView()));
